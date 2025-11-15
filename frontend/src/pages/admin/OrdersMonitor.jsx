@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { API_BASE_URL, API_URL } from '../../services/api';
 
 export default function OrdersMonitor() {
   const [orders, setOrders] = useState([]);
@@ -20,7 +21,6 @@ export default function OrdersMonitor() {
   const isManager = staffUser.role === 'manager';
 
   useEffect(() => {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
     const socket = io(API_URL);
     
     socket.on('newOrder', (newOrder) => {
@@ -56,8 +56,7 @@ export default function OrdersMonitor() {
       if (filters.timeRange) params.append('timeRange', filters.timeRange);
       if (filters.status) params.append('status', filters.status);
 
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-      const response = await fetch(`${API_URL}/api/admin/orders?${params}`);
+      const response = await fetch(`${API_BASE_URL}/admin/orders?${params}`);
       const data = await response.json();
       setOrders(data);
     } catch (error) {
@@ -71,8 +70,7 @@ export default function OrdersMonitor() {
     try {
       const params = new URLSearchParams();
       if (filters.timeRange) params.append('timeRange', filters.timeRange);
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-      const response = await fetch(`${API_URL}/api/admin/orders/summary?${params}`);
+      const response = await fetch(`${API_BASE_URL}/admin/orders/summary?${params}`);
       const data = await response.json();
       setSummary(data);
     } catch (error) {
@@ -82,8 +80,7 @@ export default function OrdersMonitor() {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-      await fetch(`${API_URL}/api/admin/orders/${orderId}/status`, {
+      await fetch(`${API_BASE_URL}/admin/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),

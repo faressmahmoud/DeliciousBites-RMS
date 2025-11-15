@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { API_BASE_URL, API_URL } from '../../services/api';
 
 export default function RevenueSales() {
   const [revenue, setRevenue] = useState({
@@ -14,7 +15,6 @@ export default function RevenueSales() {
   useEffect(() => {
     loadRevenue();
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
     const socket = io(API_URL);
     
     socket.on('revenueUpdate', () => {
@@ -31,8 +31,7 @@ export default function RevenueSales() {
   const loadRevenue = async () => {
     try {
       setLoading(true);
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-      const response = await fetch(`${API_URL}/api/admin/revenue?timeRange=${timeRange}`);
+      const response = await fetch(`${API_BASE_URL}/admin/revenue?timeRange=${timeRange}`);
       const data = await response.json();
       setRevenue(data);
     } catch (error) {

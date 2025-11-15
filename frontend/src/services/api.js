@@ -1,4 +1,5 @@
-const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api`;
+export const API_URL = import.meta.env.VITE_API_URL;
+export const API_BASE_URL = `${API_URL}/api`;
 
 export async function fetchMenu() {
   const response = await fetch(`${API_BASE_URL}/menu`);

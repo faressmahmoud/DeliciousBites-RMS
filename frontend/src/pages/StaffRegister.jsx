@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { API_BASE_URL } from '../services/api';
 
 export default function StaffRegister() {
   const navigate = useNavigate();
@@ -28,8 +29,7 @@ export default function StaffRegister() {
     setLoading(true);
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-      const response = await fetch(`${API_URL}/api/staff/register`, {
+      const response = await fetch(`${API_BASE_URL}/staff/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, role }),
