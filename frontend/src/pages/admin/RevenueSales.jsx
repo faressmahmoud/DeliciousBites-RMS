@@ -14,8 +14,8 @@ export default function RevenueSales() {
   useEffect(() => {
     loadRevenue();
 
-    // Connect to WebSocket for real-time updates
-    const socket = io('http://localhost:5001');
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    const socket = io(API_URL);
     
     socket.on('revenueUpdate', () => {
       loadRevenue();
@@ -31,7 +31,8 @@ export default function RevenueSales() {
   const loadRevenue = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5001/api/admin/revenue?timeRange=${timeRange}`);
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const response = await fetch(`${API_URL}/api/admin/revenue?timeRange=${timeRange}`);
       const data = await response.json();
       setRevenue(data);
     } catch (error) {
