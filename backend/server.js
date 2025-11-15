@@ -12,35 +12,20 @@ const server = http.createServer(app);
 // MUST COME AFTER server is created
 const io = new Server(server, {
   cors: {
-    origin: [
-      "http://localhost:3000",
-      "https://spiffy-zabaione-77f936.netlify.app"
-    ],
-    methods: ["GET", "POST"]
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
   }
 });
+
 
 // Let Render choose the port
 const PORT = process.env.PORT || 5001;
 
-const allowedOrigins = [
-  "http://localhost:3000", 
-  "https://spiffy-zabaione-77f936.netlify.app"
-];
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: false,
+}));
 
 app.use(express.json());
 
