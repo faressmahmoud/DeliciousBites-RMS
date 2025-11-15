@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
-import { API_BASE_URL, API_URL } from '../../services/api';
+import { API_BASE_URL, API_URL } from '../../config/api';
 
 export default function OrdersMonitor() {
   const [orders, setOrders] = useState([]);

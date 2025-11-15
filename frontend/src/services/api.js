@@ -1,10 +1,17 @@
-export const API_URL = import.meta.env.VITE_API_URL;
-export const API_BASE_URL = `${API_URL}/api`;
+import { API_URL, API_BASE_URL } from '../config/api';
+
+export { API_URL, API_BASE_URL };
 
 export async function fetchMenu() {
   const response = await fetch(`${API_BASE_URL}/menu`);
   if (!response.ok) {
-    throw new Error('Failed to fetch menu');
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch menu');
+    } else {
+      throw new Error(`Failed to fetch menu: ${response.status} ${response.statusText}`);
+    }
   }
   return response.json();
 }
@@ -12,7 +19,13 @@ export async function fetchMenu() {
 export async function fetchMenuByCategory(category) {
   const response = await fetch(`${API_BASE_URL}/menu/${category}`);
   if (!response.ok) {
-    throw new Error('Failed to fetch menu');
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch menu');
+    } else {
+      throw new Error(`Failed to fetch menu: ${response.status} ${response.statusText}`);
+    }
   }
   return response.json();
 }
@@ -28,8 +41,14 @@ export async function signupUser(phone, name) {
   });
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Signup failed');
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json();
+      throw new Error(error.error || 'Signup failed');
+    } else {
+      const text = await response.text();
+      throw new Error(`Signup failed: ${response.status} ${response.statusText}`);
+    }
   }
   
   return response.json();
@@ -45,8 +64,13 @@ export async function verifyOTP(phone, otp) {
   });
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'OTP verification failed');
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json();
+      throw new Error(error.error || 'OTP verification failed');
+    } else {
+      throw new Error(`OTP verification failed: ${response.status} ${response.statusText}`);
+    }
   }
   
   return response.json();
@@ -62,8 +86,13 @@ export async function requestLoginOTP(phone) {
   });
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to request OTP');
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to request OTP');
+    } else {
+      throw new Error(`Failed to request OTP: ${response.status} ${response.statusText}`);
+    }
   }
   
   return response.json();
@@ -79,8 +108,13 @@ export async function verifyLoginOTP(phone, otp) {
   });
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'OTP verification failed');
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json();
+      throw new Error(error.error || 'OTP verification failed');
+    } else {
+      throw new Error(`OTP verification failed: ${response.status} ${response.statusText}`);
+    }
   }
   
   return response.json();
@@ -97,8 +131,13 @@ export async function createReservation(reservationData) {
   });
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create reservation');
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create reservation');
+    } else {
+      throw new Error(`Failed to create reservation: ${response.status} ${response.statusText}`);
+    }
   }
   
   return response.json();
@@ -115,8 +154,13 @@ export async function createOrder(orderData) {
   });
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create order');
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create order');
+    } else {
+      throw new Error(`Failed to create order: ${response.status} ${response.statusText}`);
+    }
   }
   
   return response.json();
@@ -125,7 +169,13 @@ export async function createOrder(orderData) {
 export async function fetchUserOrders(userId) {
   const response = await fetch(`${API_BASE_URL}/orders/user/${userId}`);
   if (!response.ok) {
-    throw new Error('Failed to fetch orders');
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch orders');
+    } else {
+      throw new Error(`Failed to fetch orders: ${response.status} ${response.statusText}`);
+    }
   }
   return response.json();
 }
@@ -134,7 +184,13 @@ export async function fetchUserOrders(userId) {
 export async function fetchUserReservations(userId) {
   const response = await fetch(`${API_BASE_URL}/reservations/user/${userId}`);
   if (!response.ok) {
-    throw new Error('Failed to fetch reservations');
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch reservations');
+    } else {
+      throw new Error(`Failed to fetch reservations: ${response.status} ${response.statusText}`);
+    }
   }
   return response.json();
 }
