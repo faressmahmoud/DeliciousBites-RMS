@@ -84,6 +84,53 @@ function initializeDatabase() {
     // column exists
   }
 
+  // Add delivery-related columns if they don't exist
+  try {
+    db.exec(`ALTER TABLE orders ADD COLUMN delivery_address TEXT`);
+  } catch (e) {
+    // column exists
+  }
+  try {
+    db.exec(`ALTER TABLE orders ADD COLUMN verified INTEGER DEFAULT 0`);
+  } catch (e) {
+    // column exists
+  }
+  try {
+    db.exec(`ALTER TABLE orders ADD COLUMN verified_at DATETIME`);
+  } catch (e) {
+    // column exists
+  }
+  try {
+    db.exec(`ALTER TABLE orders ADD COLUMN customer_confirmation TEXT`);
+  } catch (e) {
+    // column exists
+  }
+  try {
+    db.exec(`ALTER TABLE orders ADD COLUMN delivered_at DATETIME`);
+  } catch (e) {
+    // column exists
+  }
+  try {
+    db.exec(`ALTER TABLE orders ADD COLUMN acknowledged INTEGER DEFAULT 0`);
+  } catch (e) {
+    // column exists
+  }
+  try {
+    db.exec(`ALTER TABLE orders ADD COLUMN confirmation_pin TEXT`);
+  } catch (e) {
+    // column exists
+  }
+  try {
+    db.exec(`ALTER TABLE orders ADD COLUMN served INTEGER DEFAULT 0`);
+  } catch (e) {
+    // column exists
+  }
+  try {
+    db.exec(`ALTER TABLE orders ADD COLUMN served_at DATETIME`);
+  } catch (e) {
+    // column exists
+  }
+
   // Order items table
   db.exec(`
     CREATE TABLE IF NOT EXISTS order_items (

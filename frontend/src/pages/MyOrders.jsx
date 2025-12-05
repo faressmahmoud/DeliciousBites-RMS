@@ -1,9 +1,25 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { fetchUserOrders } from '../services/api';
+import menuData from '../data/menuData';
+
+function getItemNameById(id) {
+  if (!id && id !== 0) return null;
+  let numericId;
+  if (typeof id === 'string') {
+    numericId = parseInt(id, 10);
+    if (isNaN(numericId)) return null;
+  } else {
+    numericId = id;
+  }
+  const item = menuData.find(m => m.id === numericId);
+  return item ? item.name : null;
+}
 
 export default function MyOrders() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -138,11 +154,15 @@ export default function MyOrders() {
                     <div className="border-t border-stone-200 pt-4">
                       <p className="text-sm font-medium text-stone-700 mb-2">Items:</p>
                       <ul className="space-y-1">
-                        {items.map((item, idx) => (
-                          <li key={idx} className="text-sm text-stone-600">
-                            {item.quantity}x Item #{item.id} - EGP {parseFloat(item.price).toFixed(2)}
-                          </li>
-                        ))}
+                        {items.map((item, idx) => {
+                          const menuItemId = item.menu_item_id || item.menuItemId || item.id;
+                          const itemName = getItemNameById(menuItemId);
+                          return (
+                            <li key={idx} className="text-sm text-stone-600">
+                              {item.quantity}x {itemName || 'Unknown Item'} - EGP {parseFloat(item.price).toFixed(2)}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   )}

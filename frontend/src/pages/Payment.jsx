@@ -8,7 +8,7 @@ import { createOrder } from '../services/api';
 export default function Payment() {
   const navigate = useNavigate();
   const { cartItems, subtotalEGP, vatEGP, totalEGP, clearCart } = useCart();
-  const { serviceMode, reservation } = useServiceMode();
+  const { serviceMode, reservation, deliveryAddress } = useServiceMode();
   const { user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState('');
   const [cardData, setCardData] = useState({
@@ -139,12 +139,14 @@ export default function Payment() {
         vat: vatEGP,
         total: totalEGP,
         paid: isPaid,
+        deliveryAddress: serviceMode === 'delivery' ? (deliveryAddress || null) : null,
       };
 
-      await createOrder(orderData);
+      const orderResponse = await createOrder(orderData);
 
       // Clear cart and redirect
       clearCart();
+      console.log('Order response:', orderResponse); // Debug log
       navigate('/order-success', {
         state: {
           orderTotal: totalEGP,
@@ -154,6 +156,9 @@ export default function Payment() {
               : paymentMethod === 'instapay'
               ? 'InstaPay'
               : 'Cash on Delivery',
+          orderId: orderResponse.id,
+          confirmationPin: orderResponse.confirmationPin || orderResponse.confirmation_pin,
+          serviceMode: serviceMode,
         },
       });
     } catch (err) {

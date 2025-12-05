@@ -5,16 +5,6 @@ export default function MenuItemCard({ item }) {
   const { addToCart } = useCart();
   // ✅ BRUTAL FIX: Remove ALL digits from name
   const cleanName = cleanMenuItemName(item.name);
-  
-  // DEBUG: Always log first 3 items to verify
-  if (item.id <= 3) {
-    console.log(`[MenuItemCard ${item.id}]`, {
-      original: item.name,
-      cleaned: cleanName,
-      hasZero: item.name?.includes('0'),
-      cleanHasZero: cleanName?.includes('0')
-    });
-  }
 
   const handleAddToCart = () => {
     addToCart({

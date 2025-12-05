@@ -8,6 +8,7 @@ export default function Sidebar() {
     { path: '/cart', label: 'Cart', icon: '🛒' },
     { path: '/my-reservations', label: 'My Reservations', icon: '📅' },
     { path: '/my-orders', label: 'My Orders', icon: '📋' },
+    { path: '/order-monitoring', label: 'Order Monitoring', icon: '📍' },
   ];
 
   return (

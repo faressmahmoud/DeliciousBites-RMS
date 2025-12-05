@@ -8,6 +8,7 @@ const ROLE_EMAILS = {
   'kitchen@example.com': 'kitchen',
   'waiter@example.com': 'waiter',
   'reception@example.com': 'reception',
+  'delivery@example.com': 'delivery',
 };
 
 // Role to route mapping
@@ -16,6 +17,7 @@ export const ROLE_ROUTES = {
   kitchen: '/kitchen-dashboard',
   waiter: '/waiter-dashboard',
   reception: '/reception-dashboard',
+  delivery: '/delivery-dashboard',
 };
 
 export function RoleAuthProvider({ children }) {

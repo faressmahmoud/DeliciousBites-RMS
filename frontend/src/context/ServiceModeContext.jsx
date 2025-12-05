@@ -5,6 +5,7 @@ const ServiceModeContext = createContext(null);
 export function ServiceModeProvider({ children }) {
   const [serviceMode, setServiceMode] = useState(null); // 'dine-in', 'delivery', 'pick-up'
   const [reservation, setReservation] = useState(null);
+  const [deliveryAddress, setDeliveryAddress] = useState(null);
 
   return (
     <ServiceModeContext.Provider
@@ -13,6 +14,8 @@ export function ServiceModeProvider({ children }) {
         setServiceMode,
         reservation,
         setReservation,
+        deliveryAddress,
+        setDeliveryAddress,
       }}
     >
       {children}

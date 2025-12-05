@@ -17,6 +17,8 @@ import Payment from './pages/Payment';
 import OrderSuccess from './pages/OrderSuccess';
 import MyReservations from './pages/MyReservations';
 import MyOrders from './pages/MyOrders';
+import DeliveryTracking from './pages/DeliveryTracking';
+import OrderMonitoring from './pages/admin/OrderMonitoring';
 import StaffLogin from './pages/StaffLogin';
 import StaffRegister from './pages/StaffRegister';
 import StaffRoleLogin from './pages/StaffRoleLogin';
@@ -26,6 +28,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import KitchenDashboard from './pages/KitchenDashboard';
 import WaiterDashboard from './pages/WaiterDashboard';
 import ReceptionDashboard from './pages/ReceptionDashboard';
+import ReservationManagement from './pages/ReservationManagement';
+import DeliveryDashboard from './pages/DeliveryDashboard';
+import DeliveryOrderDetails from './pages/DeliveryOrderDetails';
 import Unauthorized from './pages/Unauthorized';
 import VerifyOTP from './pages/VerifyOTP';
 
@@ -76,6 +81,30 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
+              <Route 
+                path="/reservation-management" 
+                element={
+                  <ProtectedRoute allowedRoles={['reception']}>
+                    <ReservationManagement />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/delivery-dashboard" 
+                element={
+                  <ProtectedRoute allowedRoles={['delivery']}>
+                    <DeliveryDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/delivery/orders/:orderId" 
+                element={
+                  <ProtectedRoute allowedRoles={['delivery']}>
+                    <DeliveryOrderDetails />
+                  </ProtectedRoute>
+                } 
+              />
               <Route path="/service-mode" element={<ServiceModeSelection />} />
               <Route path="/reservation" element={<Reservation />} />
               <Route path="/reservation-confirmation" element={<ReservationConfirmation />} />
@@ -87,6 +116,8 @@ function App() {
                 <Route path="payment" element={<Payment />} />
                 <Route path="my-reservations" element={<MyReservations />} />
                 <Route path="my-orders" element={<MyOrders />} />
+                <Route path="order-monitoring" element={<OrderMonitoring />} />
+                <Route path="track-order/:orderId" element={<DeliveryTracking />} />
               </Route>
             </Routes>
           </ServiceModeProvider>
