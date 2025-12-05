@@ -1,15 +1,24 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useRoleAuth } from '../../context/RoleAuthContext';
 import OrdersMonitor from './OrdersMonitor';
 import RevenueSales from './RevenueSales';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { staffUser, logout: roleLogout } = useRoleAuth();
   const [activeTab, setActiveTab] = useState('orders');
   
+  const legacyStaffUser = JSON.parse(localStorage.getItem('staffUser') || 'null');
+  const displayName = staffUser?.name || legacyStaffUser?.name || 'Admin';
+  
   const handleLogout = () => {
+    // Clear both legacy and role-based auth
     localStorage.removeItem('staffUser');
-    navigate('/staff/login');
+    if (staffUser) {
+      roleLogout();
+    }
+    navigate('/staff-role-login');
   };
 
   return (
@@ -20,7 +29,7 @@ export default function AdminDashboard() {
           <div className="p-6 border-b border-stone-700">
             <h2 className="text-xl font-bold mb-2">Admin Dashboard</h2>
             <p className="text-sm text-stone-400">
-              {JSON.parse(localStorage.getItem('staffUser') || '{}').name || 'Staff'}
+              {displayName}
             </p>
           </div>
           <nav className="flex-1 p-4">

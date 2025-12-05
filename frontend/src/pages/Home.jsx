@@ -24,7 +24,7 @@ export default function Home() {
             Login as User
           </button>
           <button
-            onClick={() => navigate('/staff/login')}
+            onClick={() => navigate('/staff-role-login')}
             className="bg-amber-600 text-white px-10 py-4 rounded-lg text-lg font-medium hover:bg-amber-700 transition-colors shadow-lg hover:shadow-xl w-full sm:w-auto"
           >
             Login as Staff / Manager

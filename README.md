@@ -77,6 +77,59 @@ The frontend will run on `http://localhost:3000`
 - **Reservations**: Make table reservations with calendar picker
 - **My Orders**: View order history
 - **Dashboard**: Overview of restaurant statistics
+- **Role-Based Access Control (RBAC)**: Staff authentication with role-based dashboards
+
+## Role-Based Access Control (RBAC)
+
+The application includes a role-based authentication system for staff members with hardcoded email authentication.
+
+### Staff Login
+
+Navigate to `/staff-role-login` to access the staff login page.
+
+### Test Emails
+
+The following emails are configured for testing (no password required):
+
+- `manager@example.com` → Redirects to `/admin/dashboard`
+- `kitchen@example.com` → Redirects to `/kitchen-dashboard`
+- `waiter@example.com` → Redirects to `/waiter-dashboard`
+- `reception@example.com` → Redirects to `/reception-dashboard`
+
+### Testing RBAC
+
+1. **Login Flow**:
+   - Go to `http://localhost:3000/staff-role-login`
+   - Enter one of the test emails above
+   - Click "Sign In"
+   - You will be redirected to the appropriate dashboard based on your role
+
+2. **Route Protection**:
+   - Try accessing `/admin/dashboard` without logging in → Redirects to login
+   - Login as `waiter@example.com`, then try accessing `/admin/dashboard` → Redirects to `/unauthorized` (unless waiter has admin access)
+   - Each role can only access their own dashboard
+
+3. **Persistence**:
+   - After logging in, refresh the page → You remain logged in (uses localStorage)
+   - Close and reopen the browser → You remain logged in
+
+4. **Logout**:
+   - Click the "Logout" button in any dashboard
+   - You will be redirected to the login page
+   - All authentication state is cleared
+
+### Dashboard Routes
+
+- `/admin/dashboard` - Admin/Manager dashboard (revenue, staff management, orders monitor)
+- `/kitchen-dashboard` - Kitchen staff dashboard (active orders, order status)
+- `/waiter-dashboard` - Waiter dashboard (table status, orders)
+- `/reception-dashboard` - Reception dashboard (reservations, bookings)
+
+**Note:** Manager role (`manager@example.com`) redirects to `/admin/dashboard` and has the same access as admin users.
+
+### Unauthorized Access
+
+If a user tries to access a route they don't have permission for, they will be redirected to `/unauthorized` with an error message.
 
 ## API Endpoints
 

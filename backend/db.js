@@ -92,10 +92,24 @@ function initializeDatabase() {
       menu_item_id INTEGER NOT NULL,
       quantity INTEGER NOT NULL,
       price REAL NOT NULL,
+      status TEXT DEFAULT 'pending',
+      notes TEXT,
       FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
       FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
     )
   `);
+
+  // Add status and notes columns if they don't exist
+  try {
+    db.exec(`ALTER TABLE order_items ADD COLUMN status TEXT DEFAULT 'pending'`);
+  } catch (e) {
+    // column exists
+  }
+  try {
+    db.exec(`ALTER TABLE order_items ADD COLUMN notes TEXT`);
+  } catch (e) {
+    // column exists
+  }
 
   // Staff users table
   db.exec(`

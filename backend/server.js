@@ -252,8 +252,8 @@ app.post('/api/orders', (req, res) => {
       const orderId = orderResult.lastInsertRowid;
 
       const insertItem = db.prepare(`
-        INSERT INTO order_items (order_id, menu_item_id, quantity, price)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO order_items (order_id, menu_item_id, quantity, price, status)
+        VALUES (?, ?, ?, ?, 'pending')
       `);
 
       for (const item of items) {
@@ -264,23 +264,40 @@ app.post('/api/orders', (req, res) => {
     });
 
     const orderId = insertOrder();
+    
+    // Fetch order with full details including menu item names for kitchen display
     const order = db.prepare(`
-      SELECT o.*, 
+      SELECT o.*,
              json_group_array(
                json_object(
-                 'id', oi.menu_item_id,
+                 'id', oi.id,
+                 'menu_item_id', oi.menu_item_id,
+                 'menu_item_name', mi.name,
                  'quantity', oi.quantity,
-                 'price', oi.price
+                 'price', oi.price,
+                 'status', COALESCE(oi.status, 'pending'),
+                 'notes', oi.notes
                )
              ) as items,
-             COUNT(oi.id) as items_count
+             COUNT(oi.id) as items_count,
+             r.id as reservation_id
       FROM orders o
       LEFT JOIN order_items oi ON o.id = oi.order_id
+      LEFT JOIN menu_items mi ON oi.menu_item_id = mi.id
+      LEFT JOIN reservations r ON o.reservation_id = r.id
       WHERE o.id = ?
       GROUP BY o.id
     `).get(orderId);
 
-    const orderWithPaid = { ...order, paid: order.paid === 1 };
+    const orderWithPaid = {
+      ...order,
+      paid: order.paid === 1,
+      status: order.status || 'pending', // Ensure status is set
+      items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items || []
+    };
+    
+    // Emit newOrder event with full structure for kitchen display
+    console.log('New order created:', orderWithPaid.id, 'Status:', orderWithPaid.status, 'Service Mode:', orderWithPaid.service_mode);
     io.emit('newOrder', orderWithPaid);
     io.emit('summaryUpdate', { type: 'newOrder' });
     
@@ -463,6 +480,160 @@ app.put('/api/admin/orders/:id/paid', (req, res) => {
     
     if (paid) {
       io.emit('revenueUpdate', { type: 'orderPaid', orderId: id });
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Kitchen endpoints
+app.get('/api/kitchen/orders', (req, res) => {
+  try {
+    // Debug: Check what orders exist
+    const allOrdersDebug = db.prepare('SELECT id, status, service_mode FROM orders ORDER BY id DESC LIMIT 10').all();
+    console.log('Kitchen API: All recent orders in DB:', JSON.stringify(allOrdersDebug, null, 2));
+    
+    // Get active orders (pending, preparing) with full menu item details
+    const orders = db.prepare(`
+      SELECT o.*,
+             json_group_array(
+               json_object(
+                 'id', oi.id,
+                 'menu_item_id', oi.menu_item_id,
+                 'menu_item_name', COALESCE(mi.name, 'Unknown Item'),
+                 'quantity', oi.quantity,
+                 'price', oi.price,
+                 'status', COALESCE(oi.status, 'pending'),
+                 'notes', oi.notes
+               )
+             ) as items,
+             COUNT(oi.id) as items_count,
+             r.id as reservation_id
+      FROM orders o
+      LEFT JOIN order_items oi ON o.id = oi.order_id
+      LEFT JOIN menu_items mi ON oi.menu_item_id = mi.id
+      LEFT JOIN reservations r ON o.reservation_id = r.id
+      WHERE o.status IN ('pending', 'preparing')
+      GROUP BY o.id
+      ORDER BY o.created_at DESC
+    `).all();
+    
+    console.log('Kitchen API: Found', orders.length, 'active orders (pending/preparing)');
+
+    const ordersWithPaid = orders.map(order => {
+      const parsedItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items || [];
+      // Filter out null items (from LEFT JOIN when no items exist)
+      const validItems = parsedItems.filter(item => item && item.id !== null);
+      return {
+        ...order,
+        paid: order.paid === 1,
+        items: validItems
+      };
+    });
+
+    console.log('Kitchen API: Returning', ordersWithPaid.length, 'orders');
+    res.json(ordersWithPaid);
+  } catch (error) {
+    console.error('Kitchen API error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/kitchen/orders/:id/status', (req, res) => {
+  try {
+    // Get active orders (pending, preparing) with full menu item details
+    const orders = db.prepare(`
+      SELECT o.*,
+             json_group_array(
+               json_object(
+                 'id', oi.id,
+                 'menu_item_id', oi.menu_item_id,
+                 'menu_item_name', mi.name,
+                 'quantity', oi.quantity,
+                 'price', oi.price,
+                 'status', COALESCE(oi.status, 'pending'),
+                 'notes', oi.notes
+               )
+             ) as items,
+             COUNT(oi.id) as items_count,
+             r.id as reservation_id
+      FROM orders o
+      LEFT JOIN order_items oi ON o.id = oi.order_id
+      LEFT JOIN menu_items mi ON oi.menu_item_id = mi.id
+      LEFT JOIN reservations r ON o.reservation_id = r.id
+      WHERE o.status IN ('pending', 'preparing')
+      GROUP BY o.id
+      ORDER BY o.created_at DESC
+    `).all();
+
+    const ordersWithPaid = orders.map(order => ({
+      ...order,
+      paid: order.paid === 1,
+      items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items || []
+    }));
+
+    res.json(ordersWithPaid);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/kitchen/orders/:id/status', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    // Validate status values for kitchen
+    const validStatuses = ['pending', 'preparing', 'completed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    // If trying to mark as completed, check if all items are ready
+    if (status === 'completed') {
+      const incompleteItems = db.prepare(`
+        SELECT COUNT(*) as count 
+        FROM order_items 
+        WHERE order_id = ? AND status != 'completed'
+      `).get(id);
+      
+      if (incompleteItems.count > 0) {
+        return res.status(400).json({ 
+          error: 'Cannot mark order as ready. Some items are not yet complete.' 
+        });
+      }
+    }
+
+    db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, id);
+    
+    io.emit('orderStatusChanged', { orderId: parseInt(id), status });
+    io.emit('kitchenOrderUpdate', { orderId: parseInt(id), status });
+    
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/kitchen/order-items/:itemId/status', (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const { status } = req.body;
+    
+    // Validate status values
+    const validStatuses = ['pending', 'preparing', 'completed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    db.prepare('UPDATE order_items SET status = ? WHERE id = ?').run(status, itemId);
+    
+    // Get order ID to emit update
+    const orderItem = db.prepare('SELECT order_id FROM order_items WHERE id = ?').get(itemId);
+    if (orderItem) {
+      io.emit('kitchenOrderUpdate', { orderId: orderItem.order_id, itemId: parseInt(itemId), status });
     }
     
     res.json({ success: true });
