@@ -1,9 +1,20 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRoleAuth } from '../context/RoleAuthContext';
 
 export default function Unauthorized() {
   const navigate = useNavigate();
   const { logout, staffUser } = useRoleAuth();
+
+  // Auto-redirect managers to their dashboard
+  useEffect(() => {
+    if (staffUser?.role === 'manager') {
+      const timer = setTimeout(() => {
+        navigate('/admin/dashboard', { replace: true });
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [staffUser, navigate]);
 
   const handleLogout = () => {
     logout();
@@ -19,9 +30,17 @@ export default function Unauthorized() {
           <p className="text-stone-600 mb-6">
             You don't have permission to access this page.
             {staffUser && (
-              <span className="block mt-2 text-sm">
-                Your role: <strong>{staffUser.role}</strong>
-              </span>
+              <>
+                <span className="block mt-2 text-sm">
+                  Your role: <strong>{staffUser.role}</strong>
+                </span>
+                {staffUser.role === 'manager' && (
+                  <span className="block mt-2 text-sm text-amber-600">
+                    Managers cannot access kitchen or order preparation features.
+                    {staffUser.role === 'manager' && ' Redirecting to your dashboard...'}
+                  </span>
+                )}
+              </>
             )}
           </p>
           <div className="space-y-3">

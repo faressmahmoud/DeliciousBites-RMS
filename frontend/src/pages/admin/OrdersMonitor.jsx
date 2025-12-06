@@ -79,6 +79,13 @@ export default function OrdersMonitor() {
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
+    // Prevent managers from updating order status
+    if (isManager) {
+      console.error('Managers are not authorized to update order status');
+      alert('You are not authorized to perform this action. Only kitchen staff can prepare orders.');
+      return;
+    }
+    
     try {
       await fetch(`${API_BASE_URL}/admin/orders/${orderId}/status`, {
         method: 'PUT',

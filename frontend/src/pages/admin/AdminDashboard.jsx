@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useRoleAuth } from '../../context/RoleAuthContext';
 import OrdersMonitor from './OrdersMonitor';
 import RevenueSales from './RevenueSales';
-import OrderMonitoring from './OrderMonitoring';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -59,18 +58,6 @@ export default function AdminDashboard() {
                   💰 Revenue & Sales
                 </button>
               </li>
-              <li>
-                <button
-                  onClick={() => setActiveTab('order-monitoring')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === 'order-monitoring'
-                      ? 'bg-stone-700 text-amber-50'
-                      : 'text-stone-300 hover:bg-stone-700 hover:text-amber-50'
-                  }`}
-                >
-                  📍 Order Monitoring
-                </button>
-              </li>
             </ul>
           </nav>
           <div className="p-4 border-t border-stone-700">
@@ -88,7 +75,6 @@ export default function AdminDashboard() {
           <div className="p-8">
             {activeTab === 'orders' && <OrdersMonitor />}
             {activeTab === 'revenue' && <RevenueSales />}
-            {activeTab === 'order-monitoring' && <OrderMonitoring />}
           </div>
         </main>
       </div>
