@@ -75,14 +75,33 @@ export default function StaffRoleLogin() {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-stone-500">
-            <p>Test emails:</p>
-            <p className="mt-2 space-y-1">
-              <span className="block">manager@example.com</span>
-              <span className="block">kitchen@example.com</span>
-              <span className="block">waiter@example.com</span>
-              <span className="block">reception@example.com</span>
-            </p>
+          <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-stone-700 mb-2">Demo Credentials:</p>
+            <div className="space-y-1 text-xs text-stone-600">
+              <div className="flex justify-between">
+                <span className="font-medium">Manager:</span>
+                <span className="font-mono">manager@example.com</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Kitchen:</span>
+                <span className="font-mono">kitchen@example.com</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Waiter:</span>
+                <span className="font-mono">waiter@example.com</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Reception:</span>
+                <span className="font-mono">reception@example.com</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Delivery:</span>
+                <span className="font-mono">delivery@example.com</span>
+              </div>
+              <p className="text-xs text-stone-500 mt-2 pt-2 border-t border-amber-200">
+                Password: <span className="font-mono">password123</span>
+              </p>
+            </div>
           </div>
         </div>
       </div>
