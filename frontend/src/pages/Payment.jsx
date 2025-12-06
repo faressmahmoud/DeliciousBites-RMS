@@ -195,7 +195,8 @@ export default function Payment() {
     { id: 'instapay', label: 'InstaPay', icon: '📱' },
   ];
 
-  if (serviceMode !== 'dine-in') {
+  // Only show Cash on Delivery for delivery orders (not for pickup)
+  if (serviceMode === 'delivery') {
     paymentMethods.push({ id: 'cash', label: 'Cash on Delivery', icon: '💵' });
   }
 

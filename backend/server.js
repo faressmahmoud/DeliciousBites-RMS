@@ -587,9 +587,9 @@ app.get('/api/orders/:id/tracking', (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Only allow tracking for delivery orders
-    if (order.service_mode !== 'delivery') {
-      return res.status(400).json({ error: 'Tracking is only available for delivery orders' });
+    // Allow tracking for both delivery and pickup orders
+    if (order.service_mode !== 'delivery' && order.service_mode !== 'pick-up') {
+      return res.status(400).json({ error: 'Tracking is only available for delivery and pickup orders' });
     }
 
     // Calculate ETA if order is out for delivery
@@ -610,6 +610,7 @@ app.get('/api/orders/:id/tracking', (req, res) => {
     const trackingData = {
       orderId: order.id,
       status: order.status,
+      serviceMode: order.service_mode,
       orderTotal: order.total,
       deliveryAddress: order.delivery_address,
       createdAt: order.created_at,

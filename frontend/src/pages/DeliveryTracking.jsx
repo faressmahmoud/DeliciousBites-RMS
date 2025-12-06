@@ -100,14 +100,25 @@ export default function DeliveryTracking() {
     );
   }
 
-  const currentState = mapOrderStatusToTrackingState(trackingData.status);
+  const serviceMode = trackingData.serviceMode || trackingData.service_mode;
+  const isPickup = serviceMode === 'pick-up';
+  const currentState = mapOrderStatusToTrackingState(trackingData.status, serviceMode);
   const eta = calculateETA(trackingData.status, trackingData.createdAt || trackingData.created_at);
-  const allStates = [
-    TRACKING_STATES.PLACED,
-    TRACKING_STATES.PREPARED,
-    TRACKING_STATES.ON_THE_WAY,
-    TRACKING_STATES.DELIVERED,
-  ];
+  
+  // Use different states array for pickup vs delivery
+  const allStates = isPickup
+    ? [
+        TRACKING_STATES.PLACED,
+        TRACKING_STATES.PREPARED,
+        TRACKING_STATES.READY_FOR_PICKUP,
+        TRACKING_STATES.DELIVERED,
+      ]
+    : [
+        TRACKING_STATES.PLACED,
+        TRACKING_STATES.PREPARED,
+        TRACKING_STATES.ON_THE_WAY,
+        TRACKING_STATES.DELIVERED,
+      ];
   const currentStateIndex = allStates.findIndex(s => s.key === currentState.key);
 
   return (
@@ -147,8 +158,8 @@ export default function DeliveryTracking() {
           </div>
         </div>
 
-        {/* ETA Display (only when on the way) */}
-        {eta && currentState.key === 'on-the-way' && (
+        {/* ETA Display (only when on the way for delivery) */}
+        {eta && currentState.key === 'on-the-way' && !isPickup && (
           <div className="bg-blue-50 border-2 border-blue-300 rounded-xl shadow-sm p-6 mb-6">
             <h3 className="text-xl font-bold text-blue-800 mb-2">Estimated Arrival</h3>
             <p className="text-3xl font-bold text-blue-900 mb-1">
@@ -156,6 +167,19 @@ export default function DeliveryTracking() {
             </p>
             <p className="text-blue-700">
               Expected at around {eta.time}
+            </p>
+          </div>
+        )}
+        
+        {/* Pickup Address Display (only for pickup orders) */}
+        {isPickup && (
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-xl shadow-sm p-6 mb-6">
+            <h3 className="text-xl font-bold text-amber-800 mb-2">Pickup Location</h3>
+            <p className="text-lg text-amber-900 font-medium">
+              123 Example Street, Nasr City, Cairo, Egypt
+            </p>
+            <p className="text-sm text-amber-700 mt-2">
+              Please collect your order from this location
             </p>
           </div>
         )}
@@ -219,10 +243,16 @@ export default function DeliveryTracking() {
                 <span>Total:</span>
                 <span className="font-semibold">EGP {parseFloat(trackingData.orderTotal).toFixed(2)}</span>
               </div>
-              {trackingData.deliveryAddress && (
+              {trackingData.deliveryAddress && !isPickup && (
                 <div className="flex justify-between">
                   <span>Delivery Address:</span>
                   <span className="text-right max-w-xs">{trackingData.deliveryAddress}</span>
+                </div>
+              )}
+              {isPickup && (
+                <div className="flex justify-between">
+                  <span>Pickup Location:</span>
+                  <span className="text-right max-w-xs">123 Example Street, Nasr City, Cairo, Egypt</span>
                 </div>
               )}
             </div>

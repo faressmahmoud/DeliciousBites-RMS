@@ -25,15 +25,15 @@ export default function OrderMonitoring() {
 
     const socket = io(API_URL);
 
-    // Listen for new orders - only add if it belongs to current user
+    // Listen for new orders - only add if it belongs to current user (delivery or pickup)
     socket.on('newOrder', (newOrder) => {
-      if (newOrder.service_mode === 'delivery' && (newOrder.user_id === user.id || newOrder.userId === user.id)) {
+      if ((newOrder.service_mode === 'delivery' || newOrder.service_mode === 'pick-up') && (newOrder.user_id === user.id || newOrder.userId === user.id)) {
         setOrders(prev => {
           const exists = prev.find(o => o.id === newOrder.id);
           if (exists) return prev;
-          // Only add if it's a delivery order
-          const deliveryOrders = prev.filter(o => o.service_mode === 'delivery');
-          return [newOrder, ...deliveryOrders];
+          // Only add if it's a delivery or pickup order
+          const relevantOrders = prev.filter(o => o.service_mode === 'delivery' || o.service_mode === 'pick-up');
+          return [newOrder, ...relevantOrders];
         });
       }
     });
@@ -70,12 +70,12 @@ export default function OrderMonitoring() {
       // Fetch only the logged-in user's orders (same as MyOrders page)
       const allUserOrders = await fetchUserOrders(user.id);
       
-      // Filter to only delivery orders and active ones (not cancelled)
-      const deliveryOrders = allUserOrders.filter(order => 
-        order.service_mode === 'delivery' && order.status !== 'cancelled'
+      // Filter to only delivery and pickup orders and active ones (not cancelled)
+      const relevantOrders = allUserOrders.filter(order => 
+        (order.service_mode === 'delivery' || order.service_mode === 'pick-up') && order.status !== 'cancelled'
       );
       
-      setOrders(deliveryOrders);
+      setOrders(relevantOrders);
     } catch (err) {
       console.error('Error loading orders:', err);
       setError(err.message || 'Failed to load orders');
@@ -92,11 +92,18 @@ export default function OrderMonitoring() {
       'placed': ['pending', 'preparing'],
       'prepared': ['completed', 'ready-to-serve', 'ready', 'verified'],
       'on-the-way': ['out-for-delivery', 'out_for_delivery'],
+      'ready-for-pickup': ['completed', 'ready-to-serve', 'ready', 'verified', 'out-for-delivery', 'out_for_delivery'],
       'delivered': ['delivered'],
     };
     
     const targetStatuses = statusMap[statusFilter] || [];
-    return orders.filter(order => targetStatuses.includes(order.status));
+    return orders.filter(order => {
+      // For pickup orders, map "on-the-way" filter to "ready-for-pickup" statuses
+      if (statusFilter === 'on-the-way' && order.service_mode === 'pick-up') {
+        return statusMap['ready-for-pickup'].includes(order.status);
+      }
+      return targetStatuses.includes(order.status);
+    });
   };
 
   const filteredOrders = getFilteredOrders();
@@ -147,7 +154,7 @@ export default function OrderMonitoring() {
             <option value="all">All Orders</option>
             <option value="placed">Order Placed</option>
             <option value="prepared">Order Prepared</option>
-            <option value="on-the-way">On Its Way</option>
+            <option value="on-the-way">On Its Way / Ready for Pickup</option>
             <option value="delivered">Delivered</option>
           </select>
         </div>
@@ -158,16 +165,17 @@ export default function OrderMonitoring() {
         <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-12 text-center">
           <p className="text-stone-600 text-lg">
             {statusFilter === 'all' 
-              ? 'You don\'t have any delivery orders yet.' 
-              : `You don't have any orders with status "${statusFilter}".`}
+              ? 'You don\'t have any delivery or pickup orders yet.' 
+              : `No orders with status "${statusFilter}".`}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredOrders.map((order) => {
-            const trackingState = mapOrderStatusToTrackingState(order.status);
+            const trackingState = mapOrderStatusToTrackingState(order.status, order.service_mode);
             const eta = calculateETA(order.status, order.created_at);
             const badgeColor = getTrackingStatusBadgeColor(trackingState);
+            const isPickup = order.service_mode === 'pick-up';
             
             return (
               <div
@@ -214,10 +222,16 @@ export default function OrderMonitoring() {
                   </p>
                 </div>
 
-                {order.delivery_address && (
+                {order.delivery_address && !isPickup && (
                   <div className="border-t border-stone-200 pt-4 mt-4">
                     <p className="text-xs text-stone-500 mb-1">Delivery Address:</p>
                     <p className="text-sm text-stone-700">{order.delivery_address}</p>
+                  </div>
+                )}
+                {isPickup && (
+                  <div className="border-t border-stone-200 pt-4 mt-4">
+                    <p className="text-xs text-stone-500 mb-1">Pickup Location:</p>
+                    <p className="text-sm text-stone-700">123 Example Street, Nasr City, Cairo, Egypt</p>
                   </div>
                 )}
 

@@ -19,6 +19,12 @@ export const TRACKING_STATES = {
     message: 'Your order is on its way.',
     icon: '🚚',
   },
+  READY_FOR_PICKUP: {
+    key: 'ready-for-pickup',
+    label: 'Ready for Pickup',
+    message: 'Your order is ready for pick up by customer.',
+    icon: '📦',
+  },
   DELIVERED: {
     key: 'delivered',
     label: 'Delivered',
@@ -29,8 +35,27 @@ export const TRACKING_STATES = {
 
 /**
  * Maps order status to tracking state
+ * @param {string} status - Order status
+ * @param {string} serviceMode - Service mode ('delivery', 'pick-up', 'dine-in')
  */
-export function mapOrderStatusToTrackingState(status) {
+export function mapOrderStatusToTrackingState(status, serviceMode = null) {
+  // For pickup orders, use different status for "on the way" equivalent
+  if (serviceMode === 'pick-up') {
+    const pickupStatusMap = {
+      'pending': TRACKING_STATES.PLACED,
+      'preparing': TRACKING_STATES.PLACED,
+      'completed': TRACKING_STATES.PREPARED,
+      'ready-to-serve': TRACKING_STATES.READY_FOR_PICKUP,
+      'ready': TRACKING_STATES.READY_FOR_PICKUP,
+      'verified': TRACKING_STATES.READY_FOR_PICKUP,
+      'out-for-delivery': TRACKING_STATES.READY_FOR_PICKUP,
+      'out_for_delivery': TRACKING_STATES.READY_FOR_PICKUP,
+      'delivered': TRACKING_STATES.DELIVERED,
+    };
+    return pickupStatusMap[status] || TRACKING_STATES.PLACED;
+  }
+  
+  // For delivery orders, use original mapping
   const statusMap = {
     'pending': TRACKING_STATES.PLACED,
     'preparing': TRACKING_STATES.PLACED,
@@ -89,6 +114,7 @@ export function getTrackingStatusBadgeColor(trackingState) {
     'placed': 'bg-blue-100 text-blue-800',
     'prepared': 'bg-yellow-100 text-yellow-800',
     'on-the-way': 'bg-purple-100 text-purple-800',
+    'ready-for-pickup': 'bg-purple-100 text-purple-800',
     'delivered': 'bg-green-100 text-green-800',
   };
   return colorMap[trackingState.key] || 'bg-stone-100 text-stone-800';

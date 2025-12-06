@@ -9,6 +9,11 @@
  * Run with: node backend/cleanup-db.js
  */
 
+const path = require('path');
+
+// Ensure we're in the backend directory context
+process.chdir(path.join(__dirname));
+
 const db = require('./db');
 
 console.log('🧹 Starting database cleanup...\n');
