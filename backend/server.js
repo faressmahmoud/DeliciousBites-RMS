@@ -231,19 +231,22 @@ app.post('/api/reservations', (req, res) => {
 
 // Get all dine-in reservations (for receptionist)
 // IMPORTANT: This route must come BEFORE /api/reservations to avoid route conflicts
+// Only returns reservations that have associated paid orders (completed reservations)
 app.get('/api/reservations/dine-in', (req, res) => {
   try {
-    // Get all reservations (all reservations are dine-in in this system)
-    // Sort by date and time (closest upcoming first)
-    // Include today's and future reservations
+    // Get reservations that have associated paid orders
+    // This ensures only reservations with completed orders appear in the dashboard
     const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
     const reservations = db.prepare(`
-      SELECT * FROM reservations 
-      WHERE date >= ?
-      ORDER BY date ASC, time ASC
+      SELECT DISTINCT r.*
+      FROM reservations r
+      INNER JOIN orders o ON r.id = o.reservation_id
+      WHERE r.date >= ?
+        AND o.paid = 1
+      ORDER BY r.date ASC, r.time ASC
     `).all(today);
     
-    console.log('Fetching dine-in reservations:', reservations.length, 'found');
+    console.log('Fetching dine-in reservations with paid orders:', reservations.length, 'found');
     
     // Format reservations to match required structure
     const formattedReservations = reservations.map(r => ({

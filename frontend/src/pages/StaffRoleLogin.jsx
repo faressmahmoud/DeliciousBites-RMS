@@ -6,10 +6,11 @@ export default function StaffRoleLogin() {
   const navigate = useNavigate();
   const { login } = useRoleAuth();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -20,12 +21,18 @@ export default function StaffRoleLogin() {
       return;
     }
 
-    const result = login(email.trim());
+    if (!password.trim()) {
+      setError('Please enter your password');
+      setLoading(false);
+      return;
+    }
+
+    const result = await login(email.trim(), password.trim());
 
     if (result.success) {
       navigate(result.route);
     } else {
-      setError(result.error || 'Email not recognized.');
+      setError(result.error || 'Invalid credentials.');
     }
 
     setLoading(false);
@@ -57,6 +64,24 @@ export default function StaffRoleLogin() {
                 className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent text-stone-800"
                 required
                 autoFocus
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-stone-700 mb-2">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError('');
+                }}
+                placeholder="Enter your password"
+                className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent text-stone-800"
+                required
               />
             </div>
 

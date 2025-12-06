@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config/api';
 
 const RoleAuthContext = createContext(null);
 
@@ -34,20 +35,66 @@ export function RoleAuthProvider({ children }) {
     }
   }, [staffUser]);
 
-  const login = (email) => {
-    const role = ROLE_EMAILS[email.toLowerCase()];
-    if (!role) {
-      return { success: false, error: 'Email not recognized.' };
+  const login = async (email, password) => {
+    try {
+      // Try backend authentication first
+      const response = await fetch(`${API_BASE_URL}/staff/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.toLowerCase(), password }),
+      });
+
+      if (response.ok) {
+        const backendUser = await response.json();
+        const user = {
+          email: backendUser.email,
+          role: backendUser.role,
+          name: backendUser.name || email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
+        };
+        setStaffUser(user);
+        return { success: true, user, route: ROLE_ROUTES[backendUser.role] || ROLE_ROUTES[backendUser.role] };
+      } else {
+        // Fallback to hardcoded emails for backward compatibility
+        const role = ROLE_EMAILS[email.toLowerCase()];
+        if (!role) {
+          return { success: false, error: 'Invalid email or password.' };
+        }
+
+        // For demo accounts, accept default password
+        if (password === 'password123') {
+          const user = {
+            email: email.toLowerCase(),
+            role: role,
+            name: email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
+          };
+          setStaffUser(user);
+          return { success: true, user, route: ROLE_ROUTES[role] };
+        }
+
+        return { success: false, error: 'Invalid email or password.' };
+      }
+    } catch (error) {
+      // Network error - fallback to hardcoded check
+      const role = ROLE_EMAILS[email.toLowerCase()];
+      if (!role) {
+        return { success: false, error: 'Unable to connect to server. Please try again.' };
+      }
+
+      // For demo accounts, accept default password
+      if (password === 'password123') {
+        const user = {
+          email: email.toLowerCase(),
+          role: role,
+          name: email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
+        };
+        setStaffUser(user);
+        return { success: true, user, route: ROLE_ROUTES[role] };
+      }
+
+      return { success: false, error: 'Unable to connect to server. Please try again.' };
     }
-
-    const user = {
-      email: email.toLowerCase(),
-      role: role,
-      name: email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
-    };
-
-    setStaffUser(user);
-    return { success: true, user, route: ROLE_ROUTES[role] };
   };
 
   const logout = () => {

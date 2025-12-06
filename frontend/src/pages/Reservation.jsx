@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useServiceMode } from '../context/ServiceModeContext';
 import { useAuth } from '../context/AuthContext';
-import { createReservation } from '../services/api';
 
 export default function Reservation() {
   const navigate = useNavigate();
@@ -18,7 +17,7 @@ export default function Reservation() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -29,24 +28,20 @@ export default function Reservation() {
       return;
     }
 
-    try {
-      const reservationData = {
-        userId: user?.id || null,
-        name: formData.name.trim(),
-        phone: formData.phone.trim(),
-        partySize: parseInt(formData.partySize),
-        date: formData.date,
-        time: formData.time,
-      };
+    // Store reservation data in context instead of creating reservation immediately
+    // Reservation will be created only after payment is completed
+    const reservationData = {
+      userId: user?.id || null,
+      name: formData.name.trim(),
+      phone: formData.phone.trim(),
+      partySize: parseInt(formData.partySize),
+      date: formData.date,
+      time: formData.time,
+    };
 
-      const savedReservation = await createReservation(reservationData);
-      setReservation(savedReservation);
-      navigate('/reservation-confirmation');
-    } catch (err) {
-      setError(err.message || 'Failed to create reservation. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    setReservation(reservationData);
+    setLoading(false);
+    navigate('/reservation-confirmation');
   };
 
   const handleChange = (e) => {

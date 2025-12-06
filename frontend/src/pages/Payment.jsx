@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useServiceMode } from '../context/ServiceModeContext';
 import { useAuth } from '../context/AuthContext';
-import { createOrder } from '../services/api';
+import { createOrder, createReservation } from '../services/api';
 
 export default function Payment() {
   const navigate = useNavigate();
   const { cartItems, subtotalEGP, vatEGP, totalEGP, clearCart } = useCart();
-  const { serviceMode, reservation, deliveryAddress } = useServiceMode();
+  const { serviceMode, reservation, deliveryAddress, setReservation } = useServiceMode();
   const { user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState('');
   const [cardData, setCardData] = useState({
@@ -126,9 +126,32 @@ export default function Payment() {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       const isPaid = paymentMethod !== 'cash';
+      
+      // For dine-in orders with reservation data, create reservation first (only if not already created)
+      let reservationId = reservation?.id || null;
+      if (serviceMode === 'dine-in' && reservation && !reservation.id && reservation.name) {
+        try {
+          const reservationData = {
+            userId: user?.id || null,
+            name: reservation.name,
+            phone: reservation.phone,
+            partySize: reservation.partySize,
+            date: reservation.date,
+            time: reservation.time,
+          };
+          const createdReservation = await createReservation(reservationData);
+          reservationId = createdReservation.id;
+          // Update context with created reservation
+          setReservation(createdReservation);
+        } catch (reservationError) {
+          console.error('Failed to create reservation:', reservationError);
+          // Continue with order creation even if reservation fails
+        }
+      }
+
       const orderData = {
         userId: user?.id || null,
-        reservationId: reservation?.id || null,
+        reservationId: reservationId,
         serviceMode,
         items: cartItems.map(item => ({
           id: item.id,
