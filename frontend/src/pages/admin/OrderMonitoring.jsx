@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL, API_URL } from '../../config/api';
+import { fetchUserOrders } from '../../services/api';
 import {
   mapOrderStatusToTrackingState,
   calculateETA,
@@ -9,51 +11,67 @@ import {
 } from '../../utils/trackingUtils';
 
 export default function OrderMonitoring() {
+  const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     const socket = io(API_URL);
 
-    // Listen for new orders
+    // Listen for new orders - only add if it belongs to current user
     socket.on('newOrder', (newOrder) => {
-      if (newOrder.service_mode === 'delivery') {
+      if (newOrder.service_mode === 'delivery' && (newOrder.user_id === user.id || newOrder.userId === user.id)) {
         setOrders(prev => {
           const exists = prev.find(o => o.id === newOrder.id);
           if (exists) return prev;
-          return [newOrder, ...prev];
+          // Only add if it's a delivery order
+          const deliveryOrders = prev.filter(o => o.service_mode === 'delivery');
+          return [newOrder, ...deliveryOrders];
         });
       }
     });
 
-    // Listen for order status changes
+    // Listen for order status changes - only update if order belongs to current user
     socket.on('orderStatusChanged', ({ orderId, status }) => {
-      setOrders(prev => prev.map(order =>
-        order.id === orderId ? { ...order, status } : order
-      ));
+      setOrders(prev => {
+        // Only update orders that are already in our list (which are already filtered by user)
+        const orderToUpdate = prev.find(o => o.id === orderId);
+        if (orderToUpdate) {
+          return prev.map(order =>
+            order.id === orderId ? { ...order, status } : order
+          );
+        }
+        return prev;
+      });
     });
 
     loadOrders();
 
     return () => socket.disconnect();
-  }, []);
+  }, [user]);
 
   const loadOrders = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       
-      // Fetch all delivery orders
-      const response = await fetch(`${API_BASE_URL}/admin/orders?type=delivery&timeRange=all`);
-      if (!response.ok) {
-        throw new Error('Failed to load orders');
-      }
+      // Fetch only the logged-in user's orders (same as MyOrders page)
+      const allUserOrders = await fetchUserOrders(user.id);
       
-      const data = await response.json();
       // Filter to only delivery orders and active ones (not cancelled)
-      const deliveryOrders = data.filter(order => 
+      const deliveryOrders = allUserOrders.filter(order => 
         order.service_mode === 'delivery' && order.status !== 'cancelled'
       );
       
@@ -82,6 +100,14 @@ export default function OrderMonitoring() {
   };
 
   const filteredOrders = getFilteredOrders();
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-stone-600">Please log in to view your orders.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -132,8 +158,8 @@ export default function OrderMonitoring() {
         <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-12 text-center">
           <p className="text-stone-600 text-lg">
             {statusFilter === 'all' 
-              ? 'No delivery orders found.' 
-              : `No orders with status "${statusFilter}".`}
+              ? 'You don\'t have any delivery orders yet.' 
+              : `You don't have any orders with status "${statusFilter}".`}
           </p>
         </div>
       ) : (
@@ -154,7 +180,9 @@ export default function OrderMonitoring() {
                       Order #{order.id}
                     </h3>
                     <p className="text-sm text-stone-600">
-                      Customer: {order.customerName || 'N/A'}
+                      {order.created_at && (
+                        <span>Placed: {new Date(order.created_at).toLocaleDateString()}</span>
+                      )}
                     </p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${badgeColor}`}>
