@@ -5,7 +5,7 @@ import menuData from '../../data/menuData';
 
 // Helper function to get item name by ID from menuData
 function getItemNameById(id) {
-  if (!id && id !== 0) return null;
+  if (id === null || id === undefined) return null;
   
   // Try to convert to number if it's a string
   let numericId;
@@ -18,7 +18,13 @@ function getItemNameById(id) {
   
   // Find item in menuData
   const item = menuData.find(m => m.id === numericId);
-  return item ? item.name : null;
+  if (item) {
+    return item.name;
+  }
+  
+  // Log warning for debugging
+  console.warn(`[Kitchen] Menu item not found in menuData.js for ID: ${numericId}`);
+  return null;
 }
 
 // Helper function to get item name by price (fallback when menu_item_id is missing)
@@ -26,24 +32,30 @@ function getItemNameByPrice(price) {
   if (!price) return null;
   // Find item in menuData that matches the price (allowing small rounding differences)
   const item = menuData.find(m => Math.abs(m.priceEGP - price) < 0.01);
-  return item ? item.name : null;
+  if (item) {
+    return item.name;
+  }
+  return null;
 }
 
 // Helper function to extract menu item ID from order item
 function getMenuItemId(item) {
   if (!item) return null;
   
-  // Try multiple possible fields in order of preference
-  // menu_item_id is the actual menu item ID we need
-  // item.id might be the order_item ID, not the menu item ID
+  // Priority order for finding menu_item_id:
+  // 1. menu_item_id (direct field from backend)
+  // 2. menuItem.id (from nested menuItem object)
+  // 3. menuItemId (camelCase variant)
+  // 4. item.id (only if it exists in menuData, otherwise it's probably order_item ID)
+  
   if (item.menu_item_id !== undefined && item.menu_item_id !== null) {
     return item.menu_item_id;
   }
-  if (item.menuItemId !== undefined && item.menuItemId !== null) {
-    return item.menuItemId;
-  }
   if (item.menuItem?.id !== undefined && item.menuItem?.id !== null) {
     return item.menuItem.id;
+  }
+  if (item.menuItemId !== undefined && item.menuItemId !== null) {
+    return item.menuItemId;
   }
   // Only use item.id as last resort (might be order_item ID, not menu_item ID)
   // But first check if it exists in menuData - if not, it's probably order_item ID
@@ -54,6 +66,45 @@ function getMenuItemId(item) {
     }
   }
   return null;
+}
+
+// Main function to get item name from order item - uses menuData.js as single source of truth
+function getItemNameFromOrderItem(item) {
+  if (!item) {
+    console.warn('[Kitchen] getItemNameFromOrderItem called with null/undefined item');
+    return 'Unknown Item';
+  }
+  
+  // Strategy 1: Use menuItem.name if available (most reliable, comes from backend)
+  if (item.menuItem?.name) {
+    const name = String(item.menuItem.name).trim();
+    if (name) {
+      return name;
+    }
+  }
+  
+  // Strategy 2: Extract menu_item_id and look it up in menuData.js
+  const menuItemId = getMenuItemId(item);
+  if (menuItemId !== null) {
+    const name = getItemNameById(menuItemId);
+    if (name) {
+      return name;
+    }
+    // Log warning if ID was found but name lookup failed
+    console.warn(`[Kitchen] Menu item ID ${menuItemId} found but not in menuData.js`, item);
+  }
+  
+  // Strategy 3: Try to find by price (fallback)
+  if (item.price) {
+    const name = getItemNameByPrice(item.price);
+    if (name) {
+      return name;
+    }
+  }
+  
+  // Strategy 4: Final fallback
+  console.warn('[Kitchen] Could not determine item name for order item:', item);
+  return 'Unknown Item';
 }
 
 export default function KitchenDisplayScreen() {
@@ -432,19 +483,8 @@ export default function KitchenDisplayScreen() {
                   <h3 className="text-xl font-bold text-stone-700 mb-3">Items:</h3>
                   <ul className="space-y-2">
                     {items.map((item, idx) => {
-                      // Get menu_item_id from item (try multiple possible fields)
-                      const menuItemId = getMenuItemId(item);
-                      let itemName = getItemNameById(menuItemId);
-                      
-                      // If name not found by ID, try to find by price (fallback)
-                      if (!itemName && item.price) {
-                        itemName = getItemNameByPrice(item.price);
-                      }
-                      
-                      // Final fallback
-                      if (!itemName) {
-                        itemName = 'Unknown Item';
-                      }
+                      // Get item name using the main helper function (uses menuData.js as source of truth)
+                      const itemName = getItemNameFromOrderItem(item);
                       
                       return (
                         <li
